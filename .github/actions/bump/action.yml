@@ -1,0 +1,52 @@
+name: bump version
+description: bump version
+
+inputs:
+  poetry-version:
+    description: poetry version to use
+    default: 1.8.0
+  git-author-name:
+    description: git author name for commmiting
+    default: github-actions[bot]
+  git-author-email:
+    description: git author email for committing
+    default: github-actions[bot]@users.noreply.github.com
+
+outputs:
+  version:
+    description: new version
+    value: ${{ steps.bump.outputs.version }}
+  changes:
+    description: incremental changelog
+    value: ${{ steps.details.outputs.changes }}
+  is_new_version:
+    description: has a new version been created?
+    value: ${{ steps.details.outputs.is_new_version }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: bump
+      uses: commitizen-tools/commitizen-action@master
+      with:
+        changelog_increment_filename: .incremental-changelog.md
+        git_redirect_stderr: true
+        commit: true
+        push: false
+        no_raise: 21
+    - id: details
+      shell: bash
+      run: |
+        {
+          echo 'changes<<EOF'
+          cat .incremental-changelog.md
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
+
+        if [ "$REVISION" != "$PREVIOUS_REVISION" ]; then
+          echo "is_new_version=1" >> "$GITHUB_OUTPUT"
+          # pushing seperately to use correct auth set up during actions/checkout
+          git push --atomic --tags origin HEAD:${GITHUB_REF_NAME}
+
+          cat .incremental-changelog.md >> $GITHUB_STEP_SUMMARY
+        fi
