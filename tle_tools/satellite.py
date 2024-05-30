@@ -1,0 +1,2 @@
+class Satellite:
+    pass

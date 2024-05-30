@@ -1,0 +1,12 @@
+
+#!/bin/sh
+
+# scripts/lint-local: Lint code using defined pre-commit hooks.
+
+export SKIP=${SKIP:-no-commit-to-branch}
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+poetry run pre-commit run -a
